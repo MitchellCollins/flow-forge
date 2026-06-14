@@ -16,6 +16,10 @@ const MOCK_USERS: User[] = [
 ];
 
 export const authApi = {
+  findById: (id: number) => {
+    return MOCK_USERS.find((MOCK_USER) => MOCK_USER.id === id);
+  },
+
   findByEmail: (email: string) => {
     return MOCK_USERS.find((MOCK_USER) => MOCK_USER.email === email);
   },

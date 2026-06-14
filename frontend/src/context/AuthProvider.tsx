@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useState } from "react";
+import { createContext, ReactNode, useEffect, useState } from "react";
 import { authApi, User } from "@/api/auth-api";
 
 export const AuthContext = createContext<{
@@ -9,6 +9,17 @@ export const AuthContext = createContext<{
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+
+  const USER_KEY = "user";
+
+  useEffect(() => {
+    const id = sessionStorage.getItem(USER_KEY);
+    if (id) setUser(authApi.findById(parseInt(id)) || null);
+  }, []);
+
+  useEffect(() => {
+    if (user) sessionStorage.setItem(USER_KEY, user.id.toString());
+  }, [user]);
 
   const signin = async (email: string, password: string) => {
     return await authApi.signin(email, password).then((user) => setUser(user));
