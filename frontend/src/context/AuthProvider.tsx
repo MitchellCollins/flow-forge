@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useEffect, useState } from "react";
 import { authApi, User } from "@/api/auth-api";
+import { useStorage } from "@/hooks/useStorage";
 
 export const AuthContext = createContext<{
   user: User | null;
@@ -10,15 +11,19 @@ export const AuthContext = createContext<{
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  const USER_KEY = "user";
+  const storage = useStorage();
 
   useEffect(() => {
-    const id = sessionStorage.getItem(USER_KEY);
-    if (id) setUser(authApi.findById(parseInt(id)) || null);
+    const unsubscribe = storage.subscribe("session", () => {
+      const id = storage.get("session", storage.keys.USER);
+      if (id) setUser(authApi.findById(parseInt(id)) || null);
+    });
+
+    return unsubscribe;
   }, []);
 
   useEffect(() => {
-    if (user) sessionStorage.setItem(USER_KEY, user.id.toString());
+    if (user) storage.write("session", storage.keys.USER, user.id.toString());
   }, [user]);
 
   const signin = async (email: string, password: string) => {
