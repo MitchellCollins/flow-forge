@@ -43,7 +43,7 @@ export function SideBar({ children }: { children: ReactNode }) {
 
   const router = useRouter();
 
-  const { user, onAuth } = useAuth();
+  const { user, signout, onAuth, onUnauth } = useAuth();
   const { mode, changeMode } = useThemeMode();
 
   const applyQuery = () => {
@@ -77,7 +77,16 @@ export function SideBar({ children }: { children: ReactNode }) {
       setProjects(projs);
     };
 
-    return onAuth((newUser: User) => fetchData(newUser.id));
+    const authUnsubscribe = onAuth((newUser: User) => fetchData(newUser.id));
+    const unauthUnsubscribe = onUnauth(() => {
+      setOrganisations([]);
+      setProjects([]);
+    });
+
+    return () => {
+      authUnsubscribe();
+      unauthUnsubscribe();
+    };
   }, []);
 
   const filterOrganisations = filter
@@ -246,7 +255,7 @@ export function SideBar({ children }: { children: ReactNode }) {
                 </MenuItem>
               </Tooltip>
               {/* TODO: Create Sign out functionality */}
-              <MenuItem sx={{ color: "error.main", justifyContent: "center" }}>
+              <MenuItem sx={{ color: "error.main", justifyContent: "center" }} onClick={signout}>
                 <Grid container spacing={1}>
                   <Typography>Sign Out</Typography>
                   <Logout />

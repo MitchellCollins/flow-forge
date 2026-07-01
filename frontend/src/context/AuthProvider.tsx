@@ -6,17 +6,22 @@ export const AuthContext = createContext<{
   user: User | null;
   signin: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
-  onAuth: (callback: (user: User) => void) => () => void;
+  signout: () => void;
+  onAuth: (listener: (user: User) => void) => () => void;
+  onUnauth: (listener: () => void) => () => void;
 }>({
   user: null,
   signin: () => Promise.resolve(),
   register: () => Promise.resolve(),
+  signout: () => {},
   onAuth: () => () => {},
+  onUnauth: () => () => {},
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [authListeners, setAuthListeners] = useState<Set<(user: User) => void>>(new Set());
+  const [unauthListeners, setUnauthListeners] = useState<Set<() => void>>(new Set());
 
   const storage = useStorage();
 
@@ -30,7 +35,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      storage.erase("session", storage.keys.USER);
+      for (const listener of unauthListeners) {
+        listener();
+      }
+      return;
+    }
 
     storage.write("session", storage.keys.USER, user.id.toString());
     // Notify components of user auth event
@@ -47,6 +58,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return await authApi.register(email, password).then((user) => setUser(user));
   };
 
+  const signout = () => setUser(null);
+
   const onAuth = (listener: (user: User) => void) => {
     setAuthListeners((prevListeners) => new Set(prevListeners).add(listener));
 
@@ -57,5 +70,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
   };
 
-  return <AuthContext value={{ user, signin, register, onAuth }}>{children}</AuthContext>;
+  const onUnauth = (listener: () => void) => {
+    setUnauthListeners((prevListeners) => new Set(prevListeners).add(listener));
+
+    return () =>
+      setUnauthListeners((prevListeners) => {
+        prevListeners.delete(listener);
+        return new Set(prevListeners);
+      });
+  };
+
+  return (
+    <AuthContext value={{ user, signin, register, signout, onAuth, onUnauth }}>
+      {children}
+    </AuthContext>
+  );
 }
