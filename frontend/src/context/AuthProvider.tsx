@@ -6,10 +6,17 @@ export const AuthContext = createContext<{
   user: User | null;
   signin: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
-}>({ user: null, signin: () => Promise.resolve(), register: () => Promise.resolve() });
+  onAuth: (callback: (user: User) => void) => () => void;
+}>({
+  user: null,
+  signin: () => Promise.resolve(),
+  register: () => Promise.resolve(),
+  onAuth: () => () => {},
+});
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [authListeners, setAuthListeners] = useState<Set<(user: User) => void>>(new Set());
 
   const storage = useStorage();
 
@@ -23,7 +30,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (user) storage.write("session", storage.keys.USER, user.id.toString());
+    if (!user) return;
+
+    storage.write("session", storage.keys.USER, user.id.toString());
+    // Notify components of user auth event
+    for (const listener of authListeners) {
+      listener(user);
+    }
   }, [user]);
 
   const signin = async (email: string, password: string) => {
@@ -34,5 +47,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return await authApi.register(email, password).then((user) => setUser(user));
   };
 
-  return <AuthContext value={{ user, signin, register }}>{children}</AuthContext>;
+  const onAuth = (listener: (user: User) => void) => {
+    setAuthListeners((prevListeners) => new Set(prevListeners).add(listener));
+
+    return () =>
+      setAuthListeners((prevListeners) => {
+        prevListeners.delete(listener);
+        return new Set(prevListeners);
+      });
+  };
+
+  return <AuthContext value={{ user, signin, register, onAuth }}>{children}</AuthContext>;
 }
