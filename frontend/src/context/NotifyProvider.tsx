@@ -5,12 +5,10 @@ import { createContext, ReactNode, useState } from "react";
 export const NotifyContext = createContext<{
   alert: (message: string) => void;
   error: (message: string) => void;
-  confirm: (message: string) => Promise<boolean>;
   undo: (message: string) => Promise<boolean>;
 }>({
   alert: () => {},
   error: () => {},
-  confirm: () => Promise.resolve(false),
   undo: () => Promise.resolve(false),
 });
 
@@ -23,15 +21,6 @@ export function NotifyProvider({ children }: { children: ReactNode }) {
 
   const error = (message: string, timeout = 4000) => {
     setAlerts((prevAlerts) => [...prevAlerts, { message, type: "error", timeout }]);
-  };
-
-  const confirm = (message: string, timeout = 4000) => {
-    return new Promise<boolean>((resolve) => {
-      setAlerts((prevAlerts) => [
-        ...prevAlerts,
-        { message, type: "confirm", timeout, onAnswer: resolve, onTimeout: () => resolve(false) },
-      ]);
-    });
   };
 
   const undo = (message: string, timeout = 4000) => {
@@ -54,7 +43,7 @@ export function NotifyProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <NotifyContext value={{ alert, error, confirm, undo }}>
+    <NotifyContext value={{ alert, error, undo }}>
       <Grid
         container
         spacing={2}

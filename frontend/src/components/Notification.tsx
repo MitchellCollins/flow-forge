@@ -3,13 +3,12 @@ import { Close, Warning } from "@mui/icons-material";
 import { Button, Grid, IconButton, Paper, Typography } from "@mui/material";
 import { useEffect } from "react";
 
-export type NotifyType = "alert" | "error" | "confirm" | "undo";
+export type NotifyType = "alert" | "error" | "undo";
 
 export type NotifyProps = {
   message: string;
   type: NotifyType;
   timeout?: number;
-  onAnswer?: (value: boolean) => void;
   onUndo?: () => void;
   onTimeout?: () => void;
 };
@@ -20,14 +19,12 @@ export function Notification({
   type,
   onClose,
   timeout = 2000,
-  onAnswer = () => {},
   onUndo = () => {},
   onTimeout = () => {},
 }: NotifyProps & { index: number; onClose: (index: number) => void }) {
   const typeMapper = {
     alert: "success",
     error: "error",
-    confirm: "warning",
     undo: "success",
   };
 
@@ -37,12 +34,6 @@ export function Notification({
   const handleClose = () => {
     onClose(index);
     onTimeout();
-  };
-
-  // Called when answer action is clicked
-  const handleAnswer = (answer: boolean) => {
-    onClose(index);
-    onAnswer(answer);
   };
 
   const handleUndo = () => {
@@ -63,7 +54,6 @@ export function Notification({
       sx={{
         p: 2,
         bgcolor: `${status}.main`,
-        color: `${status}.contrastText`,
         zIndex: 4,
         justifyContent: "space-between",
       }}
@@ -88,18 +78,6 @@ export function Notification({
         </Grid>
 
         {/* Actions */}
-        {type === "confirm" && (
-          <Grid container spacing={2}>
-            {/* Confirm | Cancel */}
-            <Button variant="contained" onClick={() => handleAnswer(true)}>
-              Confirm
-            </Button>
-            <Button color="error" variant="contained" onClick={() => handleAnswer(false)}>
-              Cancel
-            </Button>
-          </Grid>
-        )}
-
         {type === "undo" && (
           <Grid>
             <Button variant="contained" onClick={handleUndo}>
@@ -111,7 +89,7 @@ export function Notification({
 
       {/* Close Icon */}
       <Grid>
-        <IconButton onClick={handleClose} sx={{ color: `${status}.contrastText` }}>
+        <IconButton onClick={handleClose}>
           <Close />
         </IconButton>
       </Grid>

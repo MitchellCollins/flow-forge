@@ -1,19 +1,20 @@
 import { createContext, ReactNode, useEffect, useState } from "react";
 import { authApi, User } from "@/api/auth-api";
 import { useStorage } from "@/hooks/useStorage";
+import { useDialog } from "@/hooks/useDialog";
 
 export const AuthContext = createContext<{
   user: User | null;
   signin: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
-  signout: () => void;
+  signout: () => Promise<void>;
   onAuth: (listener: (user: User) => void) => () => void;
   onUnauth: (listener: () => void) => () => void;
 }>({
   user: null,
   signin: () => Promise.resolve(),
   register: () => Promise.resolve(),
-  signout: () => {},
+  signout: () => Promise.resolve(),
   onAuth: () => () => {},
   onUnauth: () => () => {},
 });
@@ -24,6 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [unauthListeners, setUnauthListeners] = useState<Set<() => void>>(new Set());
 
   const storage = useStorage();
+  const { confirmation } = useDialog();
 
   useEffect(() => {
     const unsubscribe = storage.subscribe("session", () => {
@@ -58,7 +60,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return await authApi.register(email, password).then((user) => setUser(user));
   };
 
-  const signout = () => setUser(null);
+  const signout = async () => {
+    const answer = await confirmation("Do you wish to signout?");
+    if (answer) setUser(null);
+  };
 
   const onAuth = (listener: (user: User) => void) => {
     setAuthListeners((prevListeners) => new Set(prevListeners).add(listener));

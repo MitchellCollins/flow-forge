@@ -4,17 +4,20 @@ import { AuthProvider } from "@/context/AuthProvider";
 import { ThemeModeProvider } from "@/context/ThemeModeProvider";
 import { NotifyProvider } from "@/context/NotifyProvider";
 import { StorageProvider } from "@/context/StorageProvider";
+import { DialogProvider } from "@/context/DialogProvider";
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <NotifyProvider>
-      <StorageProvider>
-        <AuthProvider>
-          <ThemeModeProvider>
-            <Component {...pageProps} />
-          </ThemeModeProvider>
-        </AuthProvider>
-      </StorageProvider>
-    </NotifyProvider>
+    <StorageProvider>
+      <ThemeModeProvider>
+        <NotifyProvider>
+          <DialogProvider>
+            <AuthProvider>
+              <Component {...pageProps} />
+            </AuthProvider>
+          </DialogProvider>
+        </NotifyProvider>
+      </ThemeModeProvider>
+    </StorageProvider>
   );
 }
