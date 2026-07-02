@@ -1,11 +1,12 @@
 import { capitiliseFirstChar } from "@/utils/capitilise-first-char";
-import { Close, Warning } from "@mui/icons-material";
+import { CheckOutlined, Close, Warning } from "@mui/icons-material";
 import { Button, Grid, IconButton, Paper, Typography } from "@mui/material";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export type NotifyType = "alert" | "error" | "undo";
 
 export type NotifyProps = {
+  id: string;
   message: string;
   type: NotifyType;
   timeout?: number;
@@ -13,38 +14,45 @@ export type NotifyProps = {
   onTimeout?: () => void;
 };
 
+const typeMapper = {
+  alert: "success",
+  error: "error",
+  undo: "success",
+};
+
 export function Notification({
-  index,
+  id,
   message,
   type,
   onClose,
   timeout = 2000,
   onUndo = () => {},
   onTimeout = () => {},
-}: NotifyProps & { index: number; onClose: (index: number) => void }) {
-  const typeMapper = {
-    alert: "success",
-    error: "error",
-    undo: "success",
-  };
+}: NotifyProps & { onClose: (id: string) => void }) {
+  const closeTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const status = typeMapper[type];
 
+  const clearCloseTimeout = () => {
+    if (closeTimeout.current) clearTimeout(closeTimeout.current);
+  };
+
   // Called when closed or timeout
   const handleClose = () => {
-    onClose(index);
+    clearCloseTimeout();
+    onClose(id);
     onTimeout();
   };
 
   const handleUndo = () => {
-    onClose(index);
+    onClose(id);
     onUndo();
   };
 
   useEffect(() => {
-    const closeTimeout = setTimeout(handleClose, timeout);
+    closeTimeout.current = setTimeout(handleClose, timeout);
 
-    return () => clearTimeout(closeTimeout);
+    return clearCloseTimeout;
   }, []);
 
   return (
@@ -59,40 +67,32 @@ export function Notification({
       }}
       component={Paper}
     >
-      <Grid container spacing={2} sx={{ flexDirection: "column" }}>
-        {/* Title & Message */}
-        <Grid container spacing={2} sx={{ flexDirection: "column" }}>
-          {/* Icon & Title */}
-          <Grid container spacing={1}>
-            <Grid>
-              <Warning />
-            </Grid>
-            <Grid>
-              <Typography variant="h5">{capitiliseFirstChar(status)}</Typography>
-            </Grid>
-          </Grid>
-
-          <Grid>
-            <Typography>{message}</Typography>
-          </Grid>
+      {/* Title & Message */}
+      <Grid container spacing={1} sx={{ alignItems: "center" }}>
+        {/* Icon & Title */}
+        <Grid container spacing={1} sx={{ alignItems: "center" }}>
+          {status === "error" ? <Warning /> : <CheckOutlined />}
+          <Typography variant="h5">{capitiliseFirstChar(status)}</Typography>
         </Grid>
 
-        {/* Actions */}
-        {type === "undo" && (
-          <Grid>
-            <Button variant="contained" onClick={handleUndo}>
-              Undo
-            </Button>
-          </Grid>
-        )}
+        <Typography>{message}</Typography>
       </Grid>
 
-      {/* Close Icon */}
-      <Grid>
-        <IconButton onClick={handleClose}>
-          <Close />
-        </IconButton>
-      </Grid>
+      {type === "undo" ? (
+        // Undo Button
+        <Grid>
+          <Button variant="contained" onClick={handleUndo}>
+            Undo
+          </Button>
+        </Grid>
+      ) : (
+        // Close Cross Button
+        <Grid>
+          <IconButton onClick={handleClose}>
+            <Close />
+          </IconButton>
+        </Grid>
+      )}
     </Grid>
   );
 }

@@ -16,11 +16,17 @@ export function NotifyProvider({ children }: { children: ReactNode }) {
   const [alerts, setAlerts] = useState<NotifyProps[]>([]);
 
   const alert = (message: string, timeout = 2000) => {
-    setAlerts((prevAlerts) => [...prevAlerts, { message, type: "alert", timeout }]);
+    setAlerts((prevAlerts) => [
+      ...prevAlerts,
+      { id: crypto.randomUUID(), message, type: "alert", timeout },
+    ]);
   };
 
   const error = (message: string, timeout = 4000) => {
-    setAlerts((prevAlerts) => [...prevAlerts, { message, type: "error", timeout }]);
+    setAlerts((prevAlerts) => [
+      ...prevAlerts,
+      { id: crypto.randomUUID(), message, type: "error", timeout },
+    ]);
   };
 
   const undo = (message: string, timeout = 4000) => {
@@ -28,6 +34,7 @@ export function NotifyProvider({ children }: { children: ReactNode }) {
       setAlerts((prevAlerts) => [
         ...prevAlerts,
         {
+          id: crypto.randomUUID(),
           message,
           type: "undo",
           timeout,
@@ -38,8 +45,8 @@ export function NotifyProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const handleClose = (index: number) => {
-    setAlerts((prevAlerts) => prevAlerts.filter((alert, i) => i !== index));
+  const handleClose = (id: string) => {
+    setAlerts((prevAlerts) => prevAlerts.filter((alert) => alert.id !== id));
   };
 
   return (
@@ -47,15 +54,18 @@ export function NotifyProvider({ children }: { children: ReactNode }) {
       <Grid
         container
         spacing={2}
-        sx={{ position: "fixed", zIndex: 1, right: 0, bottom: 0, flexDirection: "column", m: 4 }}
+        sx={{
+          position: "fixed",
+          zIndex: 1,
+          right: 0,
+          bottom: 0,
+          flexDirection: "column",
+          alignItems: "flex-end",
+          m: 4,
+        }}
       >
-        {alerts.map((alert, index) => (
-          <Notification
-            key={`notification-${index}`}
-            index={index}
-            {...alert}
-            onClose={handleClose}
-          />
+        {alerts.map((alert) => (
+          <Notification key={`notification-${alert.id}`} {...alert} onClose={handleClose} />
         ))}
       </Grid>
       {children}
