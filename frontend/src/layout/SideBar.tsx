@@ -5,8 +5,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useThemeMode } from "@/hooks/useThemeMode";
 import { getInitials } from "@/utils/get-initials";
 import {
+  Assignment,
+  Cases,
   Clear,
   DarkMode,
+  KeyboardArrowDown,
+  KeyboardArrowRight,
   LightMode,
   Logout,
   Person,
@@ -16,11 +20,16 @@ import {
 } from "@mui/icons-material";
 import {
   Avatar,
-  Button,
+  Collapse,
   Divider,
   Grid,
   IconButton,
   InputAdornment,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
   Menu,
   MenuItem,
   OutlinedInput,
@@ -39,6 +48,8 @@ export function SideBar({ children }: { children: ReactNode }) {
   const [organisations, setOrganisations] = useState<Organisation[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [settingOpen, setSettingOpen] = useState(false);
+  const [organisationsOpen, setOrganisationsOpen] = useState(false);
+  const [projectsOpen, setProjectsOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<Element | null>(null);
 
   const router = useRouter();
@@ -162,65 +173,76 @@ export function SideBar({ children }: { children: ReactNode }) {
           <Divider />
 
           {/* Organisations */}
-          <Stack spacing={1}>
-            <Typography variant="h6">Organisations:</Typography>
-            {filterOrganisations.length <= 0 ? (
-              <Grid
-                container
-                component={Paper}
-                spacing={1}
-                sx={{ p: 1, alignItems: "center", justifyContent: "center" }}
-              >
-                <Warning color="warning" />
-                <Typography variant="h6">No Organisations Found!</Typography>
-              </Grid>
-            ) : (
-              filterOrganisations.map(({ id, name }) => (
-                // TODO: Implement Badge for unseen changes
-                <Button
-                  key={`organisation-${id}`}
-                  variant="text"
-                  color="inherit"
-                  sx={{ justifyContent: "flex-start" }}
-                  onClick={() => router.push(`/organisation/${id}`)}
-                >
-                  {name}
-                </Button>
-              ))
-            )}
-          </Stack>
+          <List component={Paper} disablePadding>
+            <ListItemButton onClick={() => setOrganisationsOpen(!organisationsOpen)}>
+              <ListItemIcon>
+                <Cases />
+              </ListItemIcon>
+              <ListItemText primary="Organisations" />
+              {organisationsOpen ? <KeyboardArrowDown /> : <KeyboardArrowRight />}
+            </ListItemButton>
 
-          <Divider />
+            <Collapse in={organisationsOpen}>
+              <Divider />
+
+              <List disablePadding>
+                {filterOrganisations.length <= 0 ? (
+                  <ListItem>
+                    <ListItemIcon>
+                      <Warning color="warning" />
+                    </ListItemIcon>
+                    <ListItemText primary="No Organisations Found!" />
+                  </ListItem>
+                ) : (
+                  filterOrganisations.map(({ id, name }) => (
+                    // TODO: Implement Badge for unseen changes
+                    <ListItemButton
+                      key={`organisation-${id}`}
+                      onClick={() => router.push(`/organisation/${id}`)}
+                    >
+                      {name}
+                    </ListItemButton>
+                  ))
+                )}
+              </List>
+            </Collapse>
+          </List>
 
           {/* Projects */}
-          <Stack spacing={1}>
-            <Typography variant="h6">Projects:</Typography>
+          <List component={Paper} disablePadding>
+            <ListItemButton onClick={() => setProjectsOpen(!projectsOpen)}>
+              <ListItemIcon>
+                <Assignment />
+              </ListItemIcon>
+              <ListItemText primary="Projects" />
+              {projectsOpen ? <KeyboardArrowDown /> : <KeyboardArrowRight />}
+            </ListItemButton>
 
-            {filterProjects.length <= 0 ? (
-              <Grid
-                container
-                component={Paper}
-                spacing={1}
-                sx={{ p: 1, alignItems: "center", justifyContent: "center" }}
-              >
-                <Warning color="warning" />
-                <Typography variant="h6">No Projects Found!</Typography>
-              </Grid>
-            ) : (
-              filterProjects.map(({ id, title }) => (
-                // TODO: Implement Badge for unseen changes
-                <Button
-                  key={`project-${id}`}
-                  variant="text"
-                  color="inherit"
-                  sx={{ justifyContent: "flex-start" }}
-                  onClick={() => router.push(`/project/${id}`)}
-                >
-                  {title}
-                </Button>
-              ))
-            )}
-          </Stack>
+            <Collapse in={projectsOpen}>
+              <Divider />
+
+              <List disablePadding>
+                {filterProjects.length <= 0 ? (
+                  <ListItem>
+                    <ListItemIcon>
+                      <Warning color="warning" />
+                    </ListItemIcon>
+                    <ListItemText primary="No Projects Found!" />
+                  </ListItem>
+                ) : (
+                  filterProjects.map(({ id, title }) => (
+                    // TODO: Implement Badge for unseen changes
+                    <ListItemButton
+                      key={`project-${id}`}
+                      onClick={() => router.push(`/project/${id}`)}
+                    >
+                      {title}
+                    </ListItemButton>
+                  ))
+                )}
+              </List>
+            </Collapse>
+          </List>
         </Stack>
 
         {/* User Profile */}
