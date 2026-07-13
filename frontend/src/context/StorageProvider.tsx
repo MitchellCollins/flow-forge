@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useCallback, useEffect, useState } from "react";
+import { createContext, ReactNode, useCallback, useEffect, useRef } from "react";
 
 export type StorageServices = "session" | "local";
 
@@ -17,33 +17,27 @@ export const StorageContext = createContext<{
 });
 
 export function StorageProvider({ children }: { children: ReactNode }) {
-  const [sessions, setSessions] = useState<Set<() => void>>(new Set());
-  const [locals, setLocals] = useState<Set<() => void>>(new Set());
+  const session = useRef<Set<() => void>>(new Set());
+  const local = useRef<Set<() => void>>(new Set());
 
-  const storages = {
-    session: { value: sessions, set: setSessions },
-    local: { value: locals, set: setLocals },
-  };
+  const storages = { session, local };
 
   const keys = { USER: "flowforge-user", MODE: "flowforge-mode" };
 
   // Notify subscibers of change
   const updater = (storage: StorageServices) => {
-    for (const func of storages[storage].value) {
+    for (const func of storages[storage].current) {
       func();
     }
   };
 
   const subscribe = useCallback((storage: StorageServices, update: () => void) => {
-    storages[storage].set((prevSet) => new Set(prevSet).add(update));
+    storages[storage].current.add(update);
 
     update();
 
     return () => {
-      storages[storage].set((prevSet) => {
-        prevSet.delete(update);
-        return new Set(prevSet);
-      });
+      storages[storage].current.delete(update);
     };
   }, []);
 
