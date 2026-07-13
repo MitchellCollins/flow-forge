@@ -63,14 +63,18 @@ export default function Auth() {
     // Signin
     if (method === "signin") {
       if (!isValid) return;
-      signin(email, password).catch(handleError);
+      signin(email, password)
+        .then(() => router.push("/dashboard"))
+        .catch(handleError);
       return;
     }
 
     // Register
     if (confirmPassword === "" || confirmPassword !== password)
       return handleError({ field: "confirmPassword", message: "Must confirm password" });
-    register(email, password).catch(handleError);
+    register(email, password)
+      .then(() => router.push("/dashboard"))
+      .catch(handleError);
   };
 
   const handleChangeMethod = (newMethod: AuthMethod) => {
