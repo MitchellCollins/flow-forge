@@ -1,6 +1,6 @@
 import { Notification, NotifyProps } from "@/components/Notification";
 import { Grid } from "@mui/material";
-import { createContext, ReactNode, useState } from "react";
+import { createContext, ReactNode, useCallback, useState } from "react";
 
 export const NotifyContext = createContext<{
   alert: (message: string) => void;
@@ -15,21 +15,21 @@ export const NotifyContext = createContext<{
 export function NotifyProvider({ children }: { children: ReactNode }) {
   const [alerts, setAlerts] = useState<NotifyProps[]>([]);
 
-  const alert = (message: string, timeout = 2000) => {
+  const alert = useCallback((message: string, timeout = 2000) => {
     setAlerts((prevAlerts) => [
       ...prevAlerts,
       { id: crypto.randomUUID(), message, type: "alert", timeout },
     ]);
-  };
+  }, []);
 
-  const error = (message: string, timeout = 4000) => {
+  const error = useCallback((message: string, timeout = 4000) => {
     setAlerts((prevAlerts) => [
       ...prevAlerts,
       { id: crypto.randomUUID(), message, type: "error", timeout },
     ]);
-  };
+  }, []);
 
-  const undo = (message: string, timeout = 4000) => {
+  const undo = useCallback((message: string, timeout = 4000) => {
     return new Promise<boolean>((resolve) => {
       setAlerts((prevAlerts) => [
         ...prevAlerts,
@@ -43,7 +43,7 @@ export function NotifyProvider({ children }: { children: ReactNode }) {
         },
       ]);
     });
-  };
+  }, []);
 
   const handleClose = (id: string) => {
     setAlerts((prevAlerts) => prevAlerts.filter((alert) => alert.id !== id));

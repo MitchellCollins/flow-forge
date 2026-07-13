@@ -1,6 +1,6 @@
 import { Warning } from "@mui/icons-material";
 import { Button, Dialog, DialogActions, DialogTitle, Grid, Typography } from "@mui/material";
-import { createContext, ReactNode, useEffect, useState } from "react";
+import { createContext, ReactNode, useCallback, useEffect, useState } from "react";
 
 export type DialogType = "confirmation";
 export type DialogProp = {
@@ -34,11 +34,11 @@ export function DialogProvider({ children }: { children: ReactNode }) {
     setDialog(null);
   };
 
-  const confirmation = (text: string) => {
+  const confirmation = useCallback((text: string) => {
     return new Promise<boolean>((resolve) => {
       setQueue((prevQueue) => [...prevQueue, { type: "confirmation", text, onAnswer: resolve }]);
     });
-  };
+  }, []);
 
   return (
     <DialogContext value={{ confirmation }}>
