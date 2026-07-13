@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useCallback, useEffect, useState } from "react";
+import { createContext, ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { authApi, User } from "@/api/auth-api";
 import { useStorage } from "@/hooks/useStorage";
 import { useDialog } from "@/hooks/useDialog";
@@ -21,8 +21,8 @@ export const AuthContext = createContext<{
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [authListeners, setAuthListeners] = useState<Set<(user: User) => void>>(new Set());
-  const [unauthListeners, setUnauthListeners] = useState<Set<() => void>>(new Set());
+  const authListeners = useRef<Set<(user: User) => void>>(new Set());
+  const unauthListeners = useRef<Set<() => void>>(new Set());
 
   const storage = useStorage();
   const { confirmation } = useDialog();
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) {
       storage.erase("session", storage.keys.USER);
-      for (const listener of unauthListeners) {
+      for (const listener of unauthListeners.current) {
         listener();
       }
       return;
@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     storage.write("session", storage.keys.USER, user.id.toString());
     // Notify components of user auth event
-    for (const listener of authListeners) {
+    for (const listener of authListeners.current) {
       listener(user);
     }
   }, [user]);
@@ -67,23 +67,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const onAuth = useCallback((listener: (user: User) => void) => {
-    setAuthListeners((prevListeners) => new Set(prevListeners).add(listener));
+    authListeners.current.add(listener);
 
-    return () =>
-      setAuthListeners((prevListeners) => {
-        prevListeners.delete(listener);
-        return new Set(prevListeners);
-      });
+    return () => authListeners.current.delete(listener);
   }, []);
 
   const onUnauth = useCallback((listener: () => void) => {
-    setUnauthListeners((prevListeners) => new Set(prevListeners).add(listener));
+    unauthListeners.current.add(listener);
 
-    return () =>
-      setUnauthListeners((prevListeners) => {
-        prevListeners.delete(listener);
-        return new Set(prevListeners);
-      });
+    return () => unauthListeners.current.delete(listener);
   }, []);
 
   return (
