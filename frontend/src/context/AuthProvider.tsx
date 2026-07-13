@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useEffect, useState } from "react";
+import { createContext, ReactNode, useCallback, useEffect, useState } from "react";
 import { authApi, User } from "@/api/auth-api";
 import { useStorage } from "@/hooks/useStorage";
 import { useDialog } from "@/hooks/useDialog";
@@ -7,14 +7,14 @@ export const AuthContext = createContext<{
   user: User | null;
   signin: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
-  signout: () => Promise<void>;
+  signout: () => void;
   onAuth: (listener: (user: User) => void) => () => void;
   onUnauth: (listener: () => void) => () => void;
 }>({
   user: null,
   signin: () => Promise.resolve(),
   register: () => Promise.resolve(),
-  signout: () => Promise.resolve(),
+  signout: () => {},
   onAuth: () => () => {},
   onUnauth: () => () => {},
 });
@@ -52,20 +52,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
-  const signin = async (email: string, password: string) => {
-    return await authApi.signin(email, password).then((user) => setUser(user));
-  };
+  const signin = useCallback((email: string, password: string) => {
+    return authApi.signin(email, password).then((user) => setUser(user));
+  }, []);
 
-  const register = async (email: string, password: string) => {
-    return await authApi.register(email, password).then((user) => setUser(user));
-  };
+  const register = useCallback((email: string, password: string) => {
+    return authApi.register(email, password).then((user) => setUser(user));
+  }, []);
 
-  const signout = async () => {
-    const answer = await confirmation("Do you wish to signout?");
-    if (answer) setUser(null);
-  };
+  const signout = useCallback(() => {
+    confirmation("Do you wish to signout?").then((answer) => {
+      if (answer) setUser(null);
+    });
+  }, []);
 
-  const onAuth = (listener: (user: User) => void) => {
+  const onAuth = useCallback((listener: (user: User) => void) => {
     setAuthListeners((prevListeners) => new Set(prevListeners).add(listener));
 
     return () =>
@@ -73,9 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         prevListeners.delete(listener);
         return new Set(prevListeners);
       });
-  };
+  }, []);
 
-  const onUnauth = (listener: () => void) => {
+  const onUnauth = useCallback((listener: () => void) => {
     setUnauthListeners((prevListeners) => new Set(prevListeners).add(listener));
 
     return () =>
@@ -83,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         prevListeners.delete(listener);
         return new Set(prevListeners);
       });
-  };
+  }, []);
 
   return (
     <AuthContext value={{ user, signin, register, signout, onAuth, onUnauth }}>

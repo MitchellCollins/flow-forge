@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useEffect, useState } from "react";
+import { createContext, ReactNode, useCallback, useEffect, useState } from "react";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { createMuiTheme } from "@/theme/theme";
 import { useStorage } from "@/hooks/useStorage";
@@ -32,9 +32,9 @@ export function ThemeModeProvider({ children }: { children: ReactNode }) {
     storage.write("local", storage.keys.MODE, mode);
   }, [mode]);
 
-  const changeMode = (newMode: Mode) => {
+  const changeMode = useCallback((newMode: Mode) => {
     setMode(newMode);
-  };
+  }, []);
 
   return (
     <ThemeModeContext value={{ mode, changeMode }}>

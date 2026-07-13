@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useEffect, useState } from "react";
+import { createContext, ReactNode, useCallback, useEffect, useState } from "react";
 
 export type StorageServices = "session" | "local";
 
@@ -34,7 +34,7 @@ export function StorageProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const subscribe = (storage: StorageServices, update: () => void) => {
+  const subscribe = useCallback((storage: StorageServices, update: () => void) => {
     storages[storage].set((prevSet) => new Set(prevSet).add(update));
 
     update();
@@ -45,21 +45,21 @@ export function StorageProvider({ children }: { children: ReactNode }) {
         return new Set(prevSet);
       });
     };
-  };
+  }, []);
 
-  const get = (storage: StorageServices, key: string) => {
+  const get = useCallback((storage: StorageServices, key: string) => {
     return (storage === "session" ? sessionStorage : localStorage).getItem(key);
-  };
+  }, []);
 
-  const write = (storage: StorageServices, key: string, value: any) => {
+  const write = useCallback((storage: StorageServices, key: string, value: any) => {
     (storage === "session" ? sessionStorage : localStorage).setItem(key, value);
     updater(storage);
-  };
+  }, []);
 
-  const erase = (storage: StorageServices, key: string) => {
+  const erase = useCallback((storage: StorageServices, key: string) => {
     (storage === "session" ? sessionStorage : localStorage).removeItem(key);
     updater(storage);
-  };
+  }, []);
 
   // Handles changes to local storage from other tabs
   useEffect(() => {
