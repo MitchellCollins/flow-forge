@@ -28,24 +28,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { confirmation } = useDialog();
 
   useEffect(() => {
-    const unsubscribe = storage.subscribe("session", () => {
-      const id = storage.get("session", storage.keys.USER);
-      if (id) setUser(authApi.findById(parseInt(id)) || null);
+    const unsubscribe = storage.subscribe("session", "USER", (newId) => {
+      if (newId) setUser(authApi.findById(parseInt(newId)) || null);
     });
 
     return unsubscribe;
   }, []);
 
+  // FIX: Being called on initial render causing the user state to be changed multiple times as it causes it to be reset back to null after just getting the value from storage
+  // That value is then queued and triggers this effect after reseting it back to the correct value
+  // Have to find a way so that this code isn't ran on initial value
   useEffect(() => {
     if (!user) {
-      storage.erase("session", storage.keys.USER);
+      storage.erase("session", "USER");
       for (const listener of unauthListeners.current) {
         listener();
       }
       return;
     }
 
-    storage.write("session", storage.keys.USER, user.id.toString());
+    storage.write("session", "USER", user.id.toString());
     // Notify components of user auth event
     for (const listener of authListeners.current) {
       listener(user);
