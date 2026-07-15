@@ -1,7 +1,8 @@
-import { createContext, ReactNode, useCallback, useEffect, useState } from "react";
+import { createContext, ReactNode, useCallback, useEffect } from "react";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { createMuiTheme } from "@/theme/theme";
 import { useStorage } from "@/hooks/useStorage";
+import { useStateEffect } from "@/hooks/useStateEffect";
 
 export type Mode = "light" | "dark";
 
@@ -11,7 +12,9 @@ export const ThemeModeContext = createContext<{ mode: Mode; changeMode: (newMode
 });
 
 export function ThemeModeProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<Mode>("light");
+  const [mode, setMode, updateMode] = useStateEffect<Mode>("light", (newMode) => {
+    storage.write("local", "MODE", newMode);
+  });
 
   const storage = useStorage();
 
@@ -27,13 +30,8 @@ export function ThemeModeProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  // Puts updated mode into local storage
-  useEffect(() => {
-    storage.write("local", "MODE", mode);
-  }, [mode]);
-
   const changeMode = useCallback((newMode: Mode) => {
-    setMode(newMode);
+    updateMode(newMode);
   }, []);
 
   return (
