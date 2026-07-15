@@ -20,8 +20,8 @@ export function ThemeModeProvider({ children }: { children: ReactNode }) {
 
   // Gets mode from local storage
   useEffect(() => {
-    const unsubscribe = storage.subscribe("local", () => {
-      setMode((storage.get("local", storage.keys.MODE) || "light") as Mode);
+    const unsubscribe = storage.subscribe("local", "MODE", (newMode) => {
+      setMode((newMode || "light") as Mode);
     });
 
     return unsubscribe;
@@ -29,7 +29,7 @@ export function ThemeModeProvider({ children }: { children: ReactNode }) {
 
   // Puts updated mode into local storage
   useEffect(() => {
-    storage.write("local", storage.keys.MODE, mode);
+    storage.write("local", "MODE", mode);
   }, [mode]);
 
   const changeMode = useCallback((newMode: Mode) => {
