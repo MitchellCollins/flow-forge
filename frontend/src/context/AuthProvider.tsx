@@ -1,7 +1,8 @@
-import { createContext, ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { createContext, ReactNode, useCallback, useEffect, useRef } from "react";
 import { authApi, User } from "@/api/auth-api";
 import { useStorage } from "@/hooks/useStorage";
 import { useDialog } from "@/hooks/useDialog";
+import { useStateEffect } from "@/hooks/useStateEffect";
 
 export const AuthContext = createContext<{
   user: User | null;
@@ -20,7 +21,22 @@ export const AuthContext = createContext<{
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser, updateUser] = useStateEffect<User | null>(null, (newUser) => {
+    // Erases user session and triggers unauth listeners
+    if (!newUser) {
+      storage.erase("session", "USER");
+      for (const listener of unauthListeners.current) {
+        listener();
+      }
+      return;
+    }
+
+    // Creates user session and triggers auth listeners
+    storage.write("session", "USER", newUser.id.toString());
+    for (const listener of authListeners.current) {
+      listener(newUser);
+    }
+  });
   const authListeners = useRef<Set<(user: User) => void>>(new Set());
   const unauthListeners = useRef<Set<() => void>>(new Set());
 
@@ -35,36 +51,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
-  // FIX: Being called on initial render causing the user state to be changed multiple times as it causes it to be reset back to null after just getting the value from storage
-  // That value is then queued and triggers this effect after reseting it back to the correct value
-  // Have to find a way so that this code isn't ran on initial value
-  useEffect(() => {
-    if (!user) {
-      storage.erase("session", "USER");
-      for (const listener of unauthListeners.current) {
-        listener();
-      }
-      return;
-    }
-
-    storage.write("session", "USER", user.id.toString());
-    // Notify components of user auth event
-    for (const listener of authListeners.current) {
-      listener(user);
-    }
-  }, [user]);
-
   const signin = useCallback((email: string, password: string) => {
-    return authApi.signin(email, password).then((user) => setUser(user));
+    return authApi.signin(email, password).then(updateUser);
   }, []);
 
   const register = useCallback((email: string, password: string) => {
-    return authApi.register(email, password).then((user) => setUser(user));
+    return authApi.register(email, password).then(updateUser);
   }, []);
 
   const signout = useCallback(() => {
     confirmation("Do you wish to signout?").then((answer) => {
-      if (answer) setUser(null);
+      if (answer) updateUser(null);
     });
   }, []);
 
